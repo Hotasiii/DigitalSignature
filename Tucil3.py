@@ -33,7 +33,7 @@ def generate_keypair():
 
     g = gcd(e, phi)
     
-    # e relatif prima dengan phi 
+    # Kondisi: e relatif prima dengan phi 
     while (g != 1):
         e = random.randrange(1, phi)
         g = gcd(e, phi)
@@ -41,136 +41,80 @@ def generate_keypair():
     # kunci dekripsi, invers modulo
     d = extended_gcd(e, phi)[1]
 
-        # open file private and public
+    # open dan write file private and public dengan e, d, dan n
     privateFile = open("key/id_rsa.pri", "w")
     publicFile = open("key/id_rsa.pub", "w")
 
-    # replace key
+    # isi file dengan key
     privateFile.write(str(d) + " " + str(n))
     publicFile.write(str(e) + " " + str(n))
 
     privateFile.close()
     publicFile.close()    
 
-    # Public key, private key
+    # public key, private key
     return ((e, n), (d, n))
 
 # Algoritma RSA
-def rsa_encrypt(plaintext, privateKey):
-    d, n = privateKey
-    blocksize = math.ceil(math.log2(n) / 8)
+def RSAEncrypt(plaintext, privateKey):
+    d, n = privateKey, privateKey
+    blocksize = math.ceil(n.bit_length() / 8)
 
-    bytesPlaintext = bytes.fromhex(plaintext)
-    plainBlocks = [bytesPlaintext[i:i+blocksize-1] for i in range(0, len(bytesPlaintext), blocksize-1)]
-    
-    for i in range(len(plainBlocks)):
-        pad_length = blocksize - len(plainBlocks[i])
-        if pad_length:
-            plainBlocks[i] = b'\x00' * pad_length + plainBlocks[i]
-        plainBlocks[i] = int.from_bytes(plainBlocks[i], byteorder='big', signed=False)
+    plainBlocks = [bytes.fromhex('00') + plaintext[i:i+blocksize-1] for i in range(0, len(plaintext), blocksize-1)]
 
-    cipherBlocks = [pow(plain_block, d, n) for plain_block in plainBlocks]
+    pad_length = blocksize - len(plainBlocks[-1])
+    if pad_length:
+        plainBlocks[-1] = bytes.fromhex('00') * pad_length + plainBlocks[-1]
 
-    bytesCiphertext = b''.join([cipher_block.to_bytes(length=blocksize, byteorder='big', signed=False) for cipher_block in cipherBlocks])
-    pad_length_bytes = (blocksize - len(bytesPlaintext) % blocksize).to_bytes(length=4, byteorder='big', signed=False)
-    bytesCiphertext += pad_length_bytes
+    plainBlocks = [int.from_bytes(byte, byteorder='big', signed=False) for byte in plainBlocks]
 
-    return bytesCiphertext.hex()
+    cipherBlocks = [pow(block, d, n) for block in plainBlocks]
 
-def rsa_decrypt(ciphertext, publicKey):
-    e, n = publicKey
-    blocksize = math.ceil(math.log2(n) / 8)
+    cipherBlocks = [block.to_bytes(length=blocksize, byteorder='big', signed=False) for block in cipherBlocks]
 
-    bytesCiphertext = bytes.fromhex(ciphertext)
-    cipherBlocks = [int.from_bytes(bytesCiphertext[i:i+blocksize], byteorder='big', signed=False) for i in range(0, len(bytesCiphertext)-4, blocksize)]
-    pad_length = int.from_bytes(bytesCiphertext[-4:], byteorder='big', signed=False)
+    ciphertext = b''.join(cipherBlocks)
+    ciphertext += pad_length.to_bytes(length=4, byteorder='big', signed=False)
 
-    plainBlocks = [pow(cipher_block, e, n) for cipher_block in cipherBlocks]
-    bytesPlaintext = b''.join([plain_block.to_bytes(length=blocksize, byteorder='big', signed=False) for plain_block in plainBlocks])
+    return ciphertext.hex()
 
-    if pad_length > 0:
-        bytesPlaintext = bytesPlaintext[:-pad_length]
+def RSADecrypt(ciphertext, publicKey):
+    e, n = publicKey, publicKey
+    blocksize = (n.bit_length() + 7) // 8
 
-    return bytesPlaintext.hex()
+    cipherBlocks, padding = ciphertext[:-4], int.from_bytes(ciphertext[-4:], byteorder='big', signed=False)
+    cipherBlocks = [int.from_bytes(cipherBlocks[i:i+blocksize], byteorder='big', signed=False) for i in range(0, len(cipherBlocks), blocksize)]
+
+    plainBlocks = [pow(c, e, n).to_bytes(length=blocksize, byteorder='big', signed=False) for c in cipherBlocks]
+    plainBlocks[-1] = plainBlocks[-1][padding:]
+
+    plaintext = b''.join(block[1:] for block in plainBlocks)
+
+    return plaintext.hex()
 
 # Algoritma Hash SHA-3 
 def sha3(message):
-    hashed = hashlib.sha3_256(message.encode("latin-1")).hexdigest()
-    return hashed
+    hashedMessage = hashlib.sha3_256(message.encode("latin-1")).hexdigest()
+    return hashedMessage
 
 # Menu verifikasi tanda tangan digital (verifying)
 def verify(message, sign, publicKey):
     sign = bytes.fromhex(sign)
     print(sha3(message))
-    print(rsa_decrypt(sign, publicKey))
+    print(RSADecrypt(sign, publicKey))
 
-    return sha3(message) == rsa_decrypt(sign, publicKey)
+    return sha3(message) == RSADecrypt(sign, publicKey)
 
 # Pembangkitan tanda tangan digital (signing)
 def sign(message, privateKey):
-    msg_digest = sha3(message)
-    msg_digest = bytes.fromhex(msg_digest)
-    signed = rsa_encrypt(msg_digest, privateKey)
+    message_digest = sha3(message)
+    message_digest = bytes.fromhex(message_digest)
+    sign = RSAEncrypt(message_digest, privateKey)
 
-    return signed 
-
-
-######################################################## 
-# RSA Algorithm other ver.  
-
-# def rsa_encrypt(plaintext, privateKey):
-#     d, n = privateKey, privateKey
-#     blocksize = math.ceil(math.log2(n)/8)
-
-#     plain_blocks = [b'\x00' + plaintext[i:i+blocksize-1]]
-#     for i in range(0, len(plaintext), blocksize-1):
-#         pad_length = blocksize-len(plain_blocks[-1])
-#         if pad_length:
-#             plain_blocks[-1] = b'\x00' * pad_length + plain_blocks[-1]
-        
-#         plain_blocks = [int.from_bytes(byte, byteorder='big', signed=False) for byte in plain_blocks]
-
-#         cipher_blocks = []
-#         for i in range(len(plain_blocks)):
-#             cipher_blocks.append(pow(plain_blocks[i], d, n))
-
-#         cipher_blocks = [block.to_bytes(length=blocksize, byteorder='big', signed=False) for block in cipher_blocks]
-
-#         ciphertext = b''
-#         for block in cipher_blocks:
-#             ciphertext += block
-#         ciphertext += pad_length.to_bytes(length=4, byteorder='big', signed=False)
-
-#         ciphertext_str = ciphertext.hex()
-
-#         return (ciphertext_str)
+    return sign 
     
 
-# def rsa_decrypt(ciphertext, publicKey):
-
-#     e, n = publicKey
-#     blocksize = math.ceil(math.log2(n)/8)
-
-#     cipher_blocks, padding = ciphertext[:-4], int.from_bytes(ciphertext[-4:], byteorder='big', signed=False)
-
-#     cipher_blocks = [cipher_blocks[i:i+blocksize] for i in range(0, len(cipher_blocks), blocksize)]
-
-#     cipher_blocks = [int.from_bytes(byte, byteorder='big', signed=False) for byte in cipher_blocks]
-
-#     plain_blocks = []
-#     for i in range(len(cipher_blocks)):
-#         plain_blocks.append(pow(cipher_blocks[i], e, n))
-
-#     plain_blocks = [block.to_bytes(length=blocksize, byteorder='big', signed=False) for block in plain_blocks]
-
-#     plain_blocks[-1] = plain_blocks[-1][padding:]
-
-#     plain_blocks = [block[1:] for block in plain_blocks]
-
-#     plaintext = b''
-#     for block in plain_blocks:
-#         plaintext += block
-
-#     plaintext_str = plaintext.hex()
-
-#     return(plaintext_str)
+#### Test
+# print(sha3('halo'))
+# print(generate_keypair())
+# print(sign('./test.txt', 605087519906351))
+# print(verify('./test.txt', "00e84ddc7f54100115d7996f8b1500a2ec93e3c793011201c42977ca020c5efed419b900785fa5ec90cb00000004", 1371845172700751))
