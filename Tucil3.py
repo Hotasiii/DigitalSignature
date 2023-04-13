@@ -42,8 +42,8 @@ def generate_keypair():
     d = extended_gcd(e, phi)[1]
 
     # open dan write file private and public dengan e, d, dan n
-    privateFile = open("key/id_rsa.pri", "w")
-    publicFile = open("key/id_rsa.pub", "w")
+    privateFile = open("key/key_rsa.pri", "w")
+    publicFile = open("key/key_rsa.pub", "w")
 
     # isi file dengan key
     privateFile.write(str(d) + " " + str(n))
@@ -57,7 +57,7 @@ def generate_keypair():
 
 # Algoritma RSA
 def RSAEncrypt(plaintext, privateKey):
-    d, n = privateKey, privateKey
+    d, n = privateKey
     blocksize = math.ceil(n.bit_length() / 8)
 
     plainBlocks = [bytes.fromhex('00') + plaintext[i:i+blocksize-1] for i in range(0, len(plaintext), blocksize-1)]
@@ -78,7 +78,7 @@ def RSAEncrypt(plaintext, privateKey):
     return ciphertext.hex()
 
 def RSADecrypt(ciphertext, publicKey):
-    e, n = publicKey, publicKey
+    e, n = publicKey
     blocksize = (n.bit_length() + 7) // 8
 
     cipherBlocks, padding = ciphertext[:-4], int.from_bytes(ciphertext[-4:], byteorder='big', signed=False)
@@ -114,7 +114,9 @@ def sign(message, privateKey):
     
 
 #### Test
+# generate_keypair()
 # print(sha3('halo'))
 # print(generate_keypair())
-# print(sign('./test.txt', 605087519906351))
-# print(verify('./test.txt', "00e84ddc7f54100115d7996f8b1500a2ec93e3c793011201c42977ca020c5efed419b900785fa5ec90cb00000004", 1371845172700751))
+# print(sign('./test.txt', (1239560298528053, 4841202002018747)))
+# print(verify('./test.txt', "0c27f92106449a0d977e0ea53c570e145de075722d0e5ca06ffdcf3c0eb9a087ec54fd0f5672ed021cb000000004", (1034236681887629, 4841202002018747)))
+
