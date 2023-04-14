@@ -21,9 +21,9 @@ def start_menu(menu_awal):
     label.pack()
 
     #Setiap tombol mengarah ke menu masing-masing jenis cipher
-    ttk.Button(menu, text= "Generate Public & Private Key",width= 20, command= lambda: generate_keypair()).pack(pady=20)
-    ttk.Button(menu, text= "Digitally Sign a File",width= 20, command= lambda: open_file_sign(menu)).pack(pady=20)
-    ttk.Button(menu, text= "Verify Digital Signature",width= 20, command= lambda: verify_menu(menu)).pack(pady=20)
+    ttk.Button(menu, text= "Generate Public & Private Key",width= 40, command= lambda: generate_keypair()).pack(pady=20)
+    ttk.Button(menu, text= "Digitally Sign a File",width= 40, command= lambda: open_file_sign(menu)).pack(pady=20)
+    ttk.Button(menu, text= "Verify Digital Signature",width= 40, command= lambda: verify_menu(menu)).pack(pady=20)
 # Fungsi untuk setting geometry window tk
 def window_setting(menu):
     w = 700 # Lebar window menu
