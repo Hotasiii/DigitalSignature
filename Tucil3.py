@@ -83,11 +83,11 @@ def verify_menu(menu):
     menu.destroy()
     window_setting(menu_verify)
     (message, sign, menu_verify_checked) = open_file_verify('', menu_verify)
-    label=Label(menu_verify_checked, text="Upload Private Key!", font=("Courier 15 bold"))
+    label=Label(menu_verify_checked, text="Upload Public Key!", font=("Courier 15 bold"))
     label.pack()
-    (d, n, menu_verify_checked) = Key_Seperator(menu_verify_checked)
-    print(d, n, message, sign)
-    Verified = verify(message, sign, (int(d),int(n)))
+    (e, n, menu_verify_checked) = Key_Seperator(menu_verify_checked)
+    print(e, n, message, sign)
+    Verified = verify(message, sign, (int(e),int(n)))
     print(Verified)
     if (Verified == True):
         messagebox.showinfo(title="Information", message="Verifikasi berhasil!")
@@ -127,10 +127,10 @@ def open_file_sign(menu):
         messagebox.showinfo(title="Error", message="File sudah ditandatangani sebelumnya!")
         start_menu(menu_sign)
     else:
-        label=Label(menu_sign, text="Upload Public Key!", font=("Courier 15 bold"))
+        label=Label(menu_sign, text="Upload Private Key!", font=("Courier 15 bold"))
         label.pack()
-        (e, n, menu_signed) = Key_Seperator(menu_sign)
-        digital_signature = sign(content, (e,n))
+        (d, n, menu_signed) = Key_Seperator(menu_sign)
+        digital_signature = sign(content, (d,n))
         #Jika file yang ditanda tangan adalah teks, maka signature ditambahkan di akhir teks
         if (file_path[-3:] == 'txt'):
             file = open(file_path, 'a')
@@ -168,6 +168,7 @@ def Key_Seperator(menu):
         else:
             n = content[i+1:len(content)]
             i = len(content)
+    print(key, n)
     return (int(key), int(n), menu)
 
     
@@ -231,8 +232,8 @@ def generate_keypair():
     return ((e, n), (d, n))
 
 # Algoritma RSA
-def RSAEncrypt(plaintext, publicKey):
-    e, n = publicKey
+def RSAEncrypt(plaintext, privateKey):
+    d, n = privateKey
     blocksize = math.ceil(n.bit_length() / 8)
 
     plainBlocks = [bytes.fromhex('00') + plaintext[i:i+blocksize-1] for i in range(0, len(plaintext), blocksize-1)]
@@ -243,7 +244,7 @@ def RSAEncrypt(plaintext, publicKey):
 
     plainBlocks = [int.from_bytes(byte, byteorder='big', signed=False) for byte in plainBlocks]
 
-    cipherBlocks = [pow(block, e, n) for block in plainBlocks]
+    cipherBlocks = [pow(block, d, n) for block in plainBlocks]
 
     cipherBlocks = [block.to_bytes(length=blocksize, byteorder='big', signed=False) for block in cipherBlocks]
 
@@ -252,15 +253,15 @@ def RSAEncrypt(plaintext, publicKey):
 
     return ciphertext.hex()
 
-def RSADecrypt(ciphertext, privateKey):
-    d, n = privateKey
+def RSADecrypt(ciphertext, publicKey):
+    e, n = publicKey
     blocksize = (n.bit_length() + 7) // 8
 
     cipherBlocks, padding = ciphertext[:-4], int.from_bytes(ciphertext[-4:], byteorder='big', signed=False)
     cipherBlocks = [int.from_bytes(cipherBlocks[i:i+blocksize], byteorder='big', signed=False) for i in range(0, len(cipherBlocks), blocksize)]
     print(cipherBlocks)
 
-    plainBlocks = [pow(c, d, n).to_bytes(length=blocksize, byteorder='big', signed=False) for c in cipherBlocks]
+    plainBlocks = [pow(c, e, n).to_bytes(length=blocksize, byteorder='big', signed=False) for c in cipherBlocks]
     plainBlocks[-1] = plainBlocks[-1][padding:]
 
     plaintext = b''.join(block[1:] for block in plainBlocks)
@@ -273,28 +274,20 @@ def sha3(message):
     return hashedMessage
 
 # Menu verifikasi tanda tangan digital (verifying)
-def verify(message, sign, privateKey):
+def verify(message, sign, publicKey):
     sign = bytes.fromhex(sign)
     print(sha3(message))
-    print(RSADecrypt(sign, privateKey))
+    print(RSADecrypt(sign, publicKey))
 
-    return sha3(message) == RSADecrypt(sign, privateKey)
+    return sha3(message) == RSADecrypt(sign, publicKey)
 
 # Pembangkitan tanda tangan digital (signing)
-def sign(message, publicKey):
+def sign(message, privateKey):
     message_digest = sha3(message)
     message_digest = bytes.fromhex(message_digest)
-    sign = RSAEncrypt(message_digest, publicKey)
+    sign = RSAEncrypt(message_digest, privateKey)
 
     return sign 
-    
-
-#### Test
-# generate_keypair()
-# print(sha3('halo'))
-# print(generate_keypair())
-# print(sign('./test.txt', (1239560298528053, 4841202002018747)))
-# print(verify('./test.txt', "0c27f92106449a0d977e0ea53c570e145de075722d0e5ca06ffdcf3c0eb9a087ec54fd0f5672ed021cb000000004", (1034236681887629, 4841202002018747)))
 
 menu = Tk()
 start_menu(menu)
