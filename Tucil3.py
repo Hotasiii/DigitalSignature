@@ -123,7 +123,7 @@ def open_file_sign(menu):
     signature_start_index = content.find('*** Begin of digital signature ***')
     signature_end_index = content.find('*** End of digital signature ***')
     # Apabila file memiliki digital signature, maka akan dikembalikan error
-    if ((signature_start_index != -1) and (signature_end_index != -1)):
+    if ((signature_start_index != -1) or (signature_end_index != -1)):
         messagebox.showinfo(title="Error", message="File sudah ditandatangani sebelumnya!")
         start_menu(menu_sign)
     else:
