@@ -70,8 +70,7 @@ def check_digital_signature(file_path, non_text_file, menu_verify):
             else:
                 # Mengembalikan message dan digital signature
                 # +34 di sini untuk melewati bagian "*** Begin of digital signature ***" dari teks agar indeks awal yang ingin diambil adalah dari signaturenya
-                print(type(content), type(menu_verify))
-                return(content, content[(signature_start_index+34):signature_end_index], menu_verify)
+                return(content[:signature_start_index], content[(signature_start_index+34):signature_end_index], menu_verify)
         # Jika file yang diupload adalah file non-teks
         else:
             label=Label(menu_verify, text="Upload file digital signature!", font=("Courier 15 bold"))
@@ -87,7 +86,9 @@ def verify_menu(menu):
     label=Label(menu_verify_checked, text="Upload Private Key!", font=("Courier 15 bold"))
     label.pack()
     (d, n, menu_verify_checked) = Key_Seperator(menu_verify_checked)
+    print(d, n, message, sign)
     Verified = verify(message, sign, (int(d),int(n)))
+    print(Verified)
     if (Verified == True):
         messagebox.showinfo(title="Information", message="Verifikasi berhasil!")
         start_menu(menu_verify_checked)
@@ -165,7 +166,7 @@ def Key_Seperator(menu):
             key += content[i]
             i += 1
         else:
-            n = content[i+1:len(content)-1]
+            n = content[i+1:len(content)]
             i = len(content)
     return (int(key), int(n), menu)
 
